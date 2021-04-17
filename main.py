@@ -38,15 +38,19 @@ print("JSON Okay!")
 print(data['fx'])
 f.close()
 
+cap.open(0)
+cap.set(3, 320) # dimensions are yes
+cap.set(4, 240) # yes are dimensions
+
 def main():
     while True:
         if(cap.isOpened()):
             global setdims
             if setdims == False:
                 setdims = True
-                cap.set(3, 320) # dimensions are yes
-                cap.set(4, 240) # yes are dimensions
-                cap.open(0)
+                # cap.set(3, 320) # dimensions are yes
+                # cap.set(4, 240) # yes are dimensions
+                # cap.open(0)
             ret, frame = cap.read() # UNCOMMENT FOR WEBCAM
             # frame = drone.get_frame_read().frame # UNCOMMENT FOR DRONE
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -67,7 +71,9 @@ def main():
                 cv2.imshow("drone", frame)
             if len(tags) == 0:
                 cv2.imshow("drone", frame)
-            cv2.waitKey(25)
+            if cv2.waitKey(25) & 0xFF == ord("q"):
+                print("Closing!")
+                break
         else:
             cap.open(0)
 
