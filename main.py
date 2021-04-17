@@ -1,8 +1,8 @@
 import cv2, djitellopy, pupil_apriltags, json
 import numpy as np
 
-# drone = djitellopy.Tello()
-cap = cv2.VideoCapture()
+drone = djitellopy.Tello()
+# cap = cv2.VideoCapture()
 april = pupil_apriltags.Detector(
     families="tagStandard41h12",
     nthreads=1,
@@ -13,8 +13,10 @@ april = pupil_apriltags.Detector(
     debug=0
 )
 
-# drone.connect()
-# drone.streamon()
+TAG_SIZE = 0.1
+
+drone.connect()
+drone.streamon()
 
 # are the dimensions set?
 setdims = False
@@ -38,27 +40,27 @@ print("JSON Okay!")
 print(data['fx'])
 f.close()
 
-cap.open(0)
-cap.set(3, 320) # dimensions are yes
-cap.set(4, 240) # yes are dimensions
+# cap.open(0)
+# cap.set(3, 320) # dimensions are yes
+# cap.set(4, 240) # yes are dimensions
 
 def main():
     while True:
-        if(cap.isOpened()):
-            global setdims
-            if setdims == False:
-                setdims = True
-                # cap.set(3, 320) # dimensions are yes
-                # cap.set(4, 240) # yes are dimensions
-                # cap.open(0)
-            ret, frame = cap.read() # UNCOMMENT FOR WEBCAM
-            # frame = drone.get_frame_read().frame # UNCOMMENT FOR DRONE
+        # if(cap.isOpened()):
+        #     global setdims
+        #     if setdims == False:
+        #         setdims = True
+        #         # cap.set(3, 320) # dimensions are yes
+        #         # cap.set(4, 240) # yes are dimensions
+        #         # cap.open(0)
+        #     ret, frame = cap.read() # UNCOMMENT FOR WEBCAM
+            frame = drone.get_frame_read().frame # UNCOMMENT FOR DRONE
             gray = None
             try:
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             except cv2.error:
                 print("[!] No frame!") 
-            tags = april.detect(gray, estimate_tag_pose=True, camera_params=[data['fx'], data['fy'], data['cx'], data['cy']], tag_size=0.2)
+            tags = april.detect(gray, estimate_tag_pose=True, camera_params=[data['fx'], data['fy'], data['cx'], data['cy']], tag_size=TAG_SIZE)
             for tag in tags:
                 # print("Tag #" + str(tag.tag_id) + " found!")
                 distance = tag.pose_t[0] + tag.pose_t[1] + tag.pose_t[2]
@@ -80,12 +82,12 @@ def main():
             if cv2.waitKey(25) & 0xFF == ord("q"):
                 print("Closing!")
                 break
-        else:
-            cap.open(0)
+        # else:
+            # cap.open(0)
 
 
 if __name__ == "__main__":
     main()
 
-cap.release()
+# cap.release()
 cv2.destroyAllWindows()
