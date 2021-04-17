@@ -1,4 +1,4 @@
-import cv2, djitellopy, pupil_apriltags
+import cv2, djitellopy, pupil_apriltags, json
 import numpy as np
 
 # drone = djitellopy.Tello()
@@ -13,8 +13,30 @@ april = pupil_apriltags.Detector(
     debug=0
 )
 
+# drone.connect()
+# drone.streamon()
+
 # are the dimensions set?
 setdims = False
+
+print("Reading camera calibration...")
+try:
+    f = open("calibration/calib.json","r")
+except FileNotFoundError:
+    print("Error, the calibration file doesn't exist!\nPlease calibrate it using the calibration/calibrate.py file.\nNote: You need to get images first. There is a utility called capture.py in the same directory.")
+    exit(1)
+
+
+print("File read, checking JSON...")
+try:
+    data = json.load(f)
+except json.JSONDecodeError:
+    print("JSON is invalid!")
+    exit(1)
+
+print("JSON Okay!")
+print(data['fx'])
+f.close()
 
 def main():
     while True:
@@ -24,13 +46,14 @@ def main():
                 setdims = True
                 cap.set(3, 320) # dimensions are yes
                 cap.set(4, 240) # yes are dimensions
-            ret, frame = cap.read()
-            # img = drone.get_frame_read()
+                cap.open(0)
+            ret, frame = cap.read() # UNCOMMENT FOR WEBCAM
+            # frame = drone.get_frame_read().frame # UNCOMMENT FOR DRONE
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            tags = april.detect(gray, estimate_tag_pose=False)
+            tags = april.detect(gray, estimate_tag_pose=True, camera_params=[data['fx'], data['fy'], data['cx'], data['cy']], tag_size=0.1)
             for tag in tags:
-                print("Tag #" + str(tag.tag_id) + " found!")
-                # print("Distance from tag #" + tag.tag_id + ": " + tag.pose_t)
+                # print("Tag #" + str(tag.tag_id) + " found!")
+                print("Distance from tag #" + str(tag.tag_id) + ": " + str(tag.pose_t[0] + tag.pose_t[1] + tag.pose_t[2]) + " meters!")
                 (ptA, ptB, ptC, ptD) = tags[0].corners
                 ptB = (int(ptB[0]), int(ptB[1]))
                 ptC = (int(ptC[0]), int(ptC[1]))
