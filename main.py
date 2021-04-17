@@ -53,11 +53,16 @@ def main():
                 # cap.open(0)
             ret, frame = cap.read() # UNCOMMENT FOR WEBCAM
             # frame = drone.get_frame_read().frame # UNCOMMENT FOR DRONE
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            tags = april.detect(gray, estimate_tag_pose=True, camera_params=[data['fx'], data['fy'], data['cx'], data['cy']], tag_size=0.1)
+            gray = None
+            try:
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            except cv2.error:
+                print("[!] No frame!") 
+            tags = april.detect(gray, estimate_tag_pose=True, camera_params=[data['fx'], data['fy'], data['cx'], data['cy']], tag_size=0.2)
             for tag in tags:
                 # print("Tag #" + str(tag.tag_id) + " found!")
-                print("Distance from tag #" + str(tag.tag_id) + ": " + str(tag.pose_t[0] + tag.pose_t[1] + tag.pose_t[2]) + " meters!")
+                distance = tag.pose_t[0] + tag.pose_t[1] + tag.pose_t[2]
+                print("Distance from tag #" + str(tag.tag_id) + ": " + str(distance) + " meters!")
                 (ptA, ptB, ptC, ptD) = tags[0].corners
                 ptB = (int(ptB[0]), int(ptB[1]))
                 ptC = (int(ptC[0]), int(ptC[1]))
@@ -68,9 +73,10 @@ def main():
                 cv2.line(frame, ptB, ptC, (0, 255, 0), 2)
                 cv2.line(frame, ptC, ptD, (0, 255, 0), 2)
                 cv2.line(frame, ptD, ptA, (0, 255, 0), 2)
-                cv2.imshow("drone", frame)
-            if len(tags) == 0:
-                cv2.imshow("drone", frame)
+                frame = cv2.putText(frame, str(round(distance[0], 2)), (int(tag.center[0]), int(tag.center[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (150,0,0), 2, cv2.LINE_AA)
+            cv2.imshow("drone", frame)
+            # if len(tags) == 0:
+            #     cv2.imshow("drone", frame)
             if cv2.waitKey(25) & 0xFF == ord("q"):
                 print("Closing!")
                 break
