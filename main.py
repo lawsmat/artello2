@@ -13,7 +13,7 @@ april = pupil_apriltags.Detector(
     debug=0
 )
 
-TAG_SIZE = 0.1
+TAG_SIZE = 0.2
 
 drone.connect()
 drone.streamon()
