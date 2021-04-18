@@ -1,4 +1,4 @@
-import cv2, djitellopy, pupil_apriltags, json, math
+import cv2, djitellopy, pupil_apriltags, json, math, threading
 import numpy as np
 
 drone = djitellopy.Tello()
@@ -18,8 +18,7 @@ TAG_SIZE = 0.1
 drone.connect()
 drone.streamon()
 
-# are the dimensions set?
-setdims = False
+print("Drone battery: " + str(drone.get_battery()))
 
 print("Reading camera calibration...")
 try:
@@ -37,24 +36,11 @@ except json.JSONDecodeError:
     exit(1)
 
 print("JSON Okay!")
-print(data['fx'])
 f.close()
-
-# cap.open(0)
-# cap.set(3, 320) # dimensions are yes
-# cap.set(4, 240) # yes are dimensions
 
 def main():
     while True:
-        # if(cap.isOpened()):
-        #     global setdims
-        #     if setdims == False:
-        #         setdims = True
-        #         # cap.set(3, 320) # dimensions are yes
-        #         # cap.set(4, 240) # yes are dimensions
-        #         # cap.open(0)
-        #     ret, frame = cap.read() # UNCOMMENT FOR WEBCAM
-            frame = drone.get_frame_read().frame # UNCOMMENT FOR DRONE
+            frame = drone.get_frame_read().frame
             gray = None
             try:
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -63,7 +49,6 @@ def main():
             tags = april.detect(gray, estimate_tag_pose=True, camera_params=[data['fx'], data['fy'], data['cx'], data['cy']], tag_size=TAG_SIZE)
             handled = False
             for tag in tags:
-                # print("Tag #" + str(tag.tag_id) + " found!")
                 distance = tag.pose_t[0] + tag.pose_t[1] + tag.pose_t[2]
                 print("Distance from tag #" + str(tag.tag_id) + ": " + str(distance) + " meters!")
                 look_at(tag.pose_t)
@@ -109,23 +94,33 @@ def handleKey(key, pnt=None):
     if key == ord("q"):
         return True
     if key == ord("t"):
-        drone.takeoff()
+        def takeoff():
+            drone.takeoff()
+        threading.Thread(target=takeoff).start()
     if key == ord("\\"):
-        drone.land()
+        def land():
+            drone.land()
+        threading.Thread(target=land).start()
     if key == ord("y"):
         # look at
-        if pnt is None: return
+        if pnt is None:
+            print("NO TAG!")
+            return
         angle = look_at(pnt)
         if(angle > 0):
             # cw
-            drone.rotate_clockwise(int(angle))
+            def cw(angle, drone):
+                drone.rotate_clockwise(int(angle))
+            threading.Thread(target=cw, args=(angle, drone)).start()
         else:
-            drone.rotate_counter_clockwise(int(-angle))
+            # ccw
+            def ccw(angle, drone):
+                drone.rotate_counter_clockwise(int(-angle))
+            threading.Thread(target=ccw, args=(angle, drone)).start()
 
 
 
 if __name__ == "__main__":
     main()
 
-# cap.release()
 cv2.destroyAllWindows()
