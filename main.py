@@ -1,4 +1,4 @@
-import cv2, djitellopy, pupil_apriltags, json
+import cv2, djitellopy, pupil_apriltags, json, math
 import numpy as np
 
 drone = djitellopy.Tello()
@@ -65,6 +65,7 @@ def main():
                 # print("Tag #" + str(tag.tag_id) + " found!")
                 distance = tag.pose_t[0] + tag.pose_t[1] + tag.pose_t[2]
                 print("Distance from tag #" + str(tag.tag_id) + ": " + str(distance) + " meters!")
+                look_at(tag.pose_t)
                 (ptA, ptB, ptC, ptD) = tags[0].corners
                 ptB = (int(ptB[0]), int(ptB[1]))
                 ptC = (int(ptC[0]), int(ptC[1]))
@@ -84,6 +85,16 @@ def main():
                 break
         # else:
             # cap.open(0)
+
+def look_at(point):
+    x = point[0] # X in 3d space
+    y = point[2] # Z in 3d space
+
+    rotx = math.atan2(x, y) * 180/math.pi
+
+    print(rotx)
+
+    return rotx
 
 
 if __name__ == "__main__":
