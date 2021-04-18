@@ -61,6 +61,7 @@ def main():
             except cv2.error:
                 print("[!] No frame!") 
             tags = april.detect(gray, estimate_tag_pose=True, camera_params=[data['fx'], data['fy'], data['cx'], data['cy']], tag_size=TAG_SIZE)
+            handled = False
             for tag in tags:
                 # print("Tag #" + str(tag.tag_id) + " found!")
                 distance = tag.pose_t[0] + tag.pose_t[1] + tag.pose_t[2]
@@ -77,24 +78,50 @@ def main():
                 cv2.line(frame, ptC, ptD, (0, 255, 0), 2)
                 cv2.line(frame, ptD, ptA, (0, 255, 0), 2)
                 frame = cv2.putText(frame, str(round(distance[0], 2)), (int(tag.center[0]), int(tag.center[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (150,0,0), 2, cv2.LINE_AA)
+                key = cv2.waitKey(10) & 0xFF
+                handled = True
+                if handleKey(key, pnt=tag.pose_t):
+                    print("Closing!")
+                    break
             cv2.imshow("drone", frame)
             # if len(tags) == 0:
             #     cv2.imshow("drone", frame)
-            if cv2.waitKey(25) & 0xFF == ord("q"):
-                print("Closing!")
-                break
+            if not handled:
+                key = cv2.waitKey(10) & 0xFF
+                if handleKey(key):
+                    print("Closing!")
+                    break
         # else:
             # cap.open(0)
 
 def look_at(point):
     x = point[0] # X in 3d space
     y = point[2] # Z in 3d space
+    # we don't care about the y axis yet
 
     rotx = math.atan2(x, y) * 180/math.pi
 
     print(rotx)
 
     return rotx
+
+def handleKey(key, pnt=None):
+    if key == ord("q"):
+        return True
+    if key == ord("t"):
+        drone.takeoff()
+    if key == ord("\\"):
+        drone.land()
+    if key == ord("y"):
+        # look at
+        if pnt is None: return
+        angle = look_at(pnt)
+        if(angle > 0):
+            # cw
+            drone.rotate_clockwise(int(angle))
+        else:
+            drone.rotate_counter_clockwise(int(-angle))
+
 
 
 if __name__ == "__main__":
