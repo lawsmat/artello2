@@ -67,7 +67,7 @@ def main():
             else:
                 failure_count = 0
             if failure_count >= 10:
-                print("FAILURE!!!")
+                print("Drone failed.")
                 failure_count = 0
                 #stop
                 drone.send_rc_control(0,0,0,0)
